@@ -63,12 +63,32 @@ process bwa_align {
     script:
     if( deduped == "N")
         """
-        ${BWA} mem ${indexfiles[0]} ${reads} -t ${threads} -R '@RG\\tID:${pair_id}\\tSM:${pair_id}' > ${pair_id}_alignment.sam
-        ${SAMTOOLS} view -@ ${threads} -S -b ${pair_id}_alignment.sam > ${pair_id}_alignment.bam
-        rm ${pair_id}_alignment.sam
-        ${SAMTOOLS} sort -@ ${threads} -n ${pair_id}_alignment.bam -o ${pair_id}_alignment_sorted.bam
-        rm ${pair_id}_alignment.bam
-        """
+        #${BWA} mem ${indexfiles[0]} ${reads} -t ${threads} -R '@RG\\tID:${pair_id}\\tSM:${pair_id}' > ${pair_id}_alignment.sam
+        #${SAMTOOLS} view -@ ${threads} -S -b ${pair_id}_alignment.sam > ${pair_id}_alignment.bam
+        #rm ${pair_id}_alignment.sam
+        #${SAMTOOLS} sort -@ ${threads} -n ${pair_id}_alignment.bam -o ${pair_id}_alignment_sorted.bam
+        #rm ${pair_id}_alignment.bam
+        # step 10
+        ln -s "${params.host}" "localref.fa" 
+        bwa index "localref.fa"
+        bwa aln -t ${threads} "localref.fa" ${reads[0]} > first.sai 
+        bwa aln -t ${threads} "localref.fa" ${reads[1]} > second.sai 
+        bwa sampe "localref.fa" first.sai second.sai ${reads} | samtools view -Sb - > temporary_bam_file.bam 
+        samtools sort temporary_bam_file.bam -o alignment_sorted.bam
+        # step 11
+        samtools sort -@ ${threads} -o temp_bam -O bam -T dataset "alignment_sorted.bam" 
+        samtools view -@ ${threads} -f 0x0004 -f 0x0008 -f 0x0001 -b -o "alignment_sorted_filtered.bam" temp_bam
+        # step 12
+        samtools sort -n -@ ${threads} -o "alignment_sorted_filtered_sorted.bam" -O bam -T dataset "alignment_sorted_filtered.bam"
+        # step 13
+	unlink "localref.fa"
+        ln -s "${params.amr}" "localref.fa" 
+        bwa index "localref.fa" 
+        bwa aln -t ${threads} -b -1 "localref.fa" "alignment_sorted_filtered_sorted.bam" > first.sai 
+        bwa aln -t ${threads} -b -2 "localref.fa" "alignment_sorted_filtered_sorted.bam" > second.sai 
+        bwa sampe "localref.fa" first.sai second.sai "alignment_sorted_filtered_sorted.bam" "alignment_sorted_filtered_sorted.bam" | samtools view -Sb - > temporary_bam_file.bam 
+        samtools sort temporary_bam_file.bam -o ${pair_id}_alignment_sorted.bam
+	"""
     else if( deduped == "Y")
         """
         ${BWA} mem ${indexfiles[0]} ${reads} -t ${threads} -R '@RG\\tID:${pair_id}\\tSM:${pair_id}' > ${pair_id}_alignment.sam
