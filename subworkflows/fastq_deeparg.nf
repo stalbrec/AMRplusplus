@@ -1,20 +1,25 @@
 // Load modules
-include { RunDeeparg } from '../modules/Inference/deeparg.nf' 
+include { RunDeeparg; RunDeepargSS } from '../modules/Inference/deeparg.nf' 
 
 workflow FASTQ_DEEPARG_WF {
     take: 
         read_pairs_ch
         deepargdb
+        short_reads_pipeline
 
     main:
         println "using database from $deepargdb"
         if(deepargdb && file(deepargdb).exists() ){
             if(workflow.profile == "conda"){
-                RunDeeparg(read_pairs_ch, deepargdb)|view {it}
+                if (short_reads_pipeline == true) {
+                    RunDeepargSS(read_pairs_ch, deepargdb)
+                } else {
+                    RunDeeparg(read_pairs_ch, deepargdb)
+                }
             } else {
-                println "WARNING: In order to use deepARG you need to use the conda profile!"
+                error "In order to use deepARG you need to use the conda profile!"
             }
         }else{
-            println "ERROR: provided deeparg data directory ($deepargdb) does not exists!"
+            error "The provided deeparg data directory ($deepargdb) does not exists!"
         }
 }
