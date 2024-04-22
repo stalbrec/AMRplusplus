@@ -77,6 +77,7 @@ include { STANDARD_AMRplusplus } from './subworkflows/AMR++_standard.nf'
 include { FAST_AMRplusplus } from './subworkflows/AMR++_fast.nf'
 include { STANDARD_AMRplusplus_wKraken } from './subworkflows/AMR++_standard_wKraken.nf'
 include { STANDARD_AMRplusplus_wDeepARG } from './subworkflows/AMR++_standard_wDeepARG.nf'
+include { STANDARD_AMRplusplus_wCustomDeepARG } from './subworkflows/AMR++_standard_wDeepARG.nf'
 
 // Load subworkflows
 include { FASTQ_QC_WF } from './subworkflows/fastq_information.nf'
@@ -144,7 +145,15 @@ Running the ${params.pipeline} pipeline
 Running the ${params.pipeline} pipeline
 ===================================
         """
-        STANDARD_AMRplusplus_wDeepARG(fastq_files, params.host, params.amr, params.annotation, params.deeparg_db)
+        STANDARD_AMRplusplus_wDeepARG(fastq_files, params.host, params.amr, params.annotation, params.deeparg_db, params.deeparg_version)
+    }  
+    else if (params.pipeline == "standard_AMR_wCustomDeepARG"){
+        log.info """\
+===================================
+Running the ${params.pipeline} pipeline
+===================================
+        """
+        STANDARD_AMRplusplus_wCustomDeepARG(fastq_files, params.host, params.amr, params.annotation, params.deeparg_db, params.deeparg_version)
     }
     else if(params.pipeline == "deeparg") {
         log.info """\
