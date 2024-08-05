@@ -12,8 +12,9 @@ nextflow.enable.dsl=2
 log.info """\
  A M R + +    N F   P I P E L I N E
  ===================================
- reads being analyzed : ${params.reads}
- output folder        : ${params.output}
+ Reads being analyzed : ${params.reads}
+ With the pipeline    : ${params.pipeline}
+ Output folder        : ${params.output}
  """
 
 
@@ -91,6 +92,7 @@ include { FASTQ_QIIME2_WF } from './subworkflows/fastq_16S_qiime2.nf'
 
 // Load BAM subworkflows
 include { BAM_RESISTOME_WF } from './subworkflows/bam_resistome.nf'
+include { BAM_RESISTOME_COUNTS_WF } from './subworkflows/bam_resistome_counts.nf'
 
 
 
@@ -212,11 +214,11 @@ Running the ${params.pipeline} subworkflow
         FASTQ_KRAKEN_WF( fastq_files , params.kraken_db)
     }
     else if(params.pipeline == "qiime2") {
-         log.info """\
-===================================
-Running the ${params.pipeline} subworkflow
-===================================
-        """
+        log.info"""\
+        ===================================
+        Running the ${params.pipeline} subworkflow
+        ===================================
+                """
         Channel
             .fromFilePairs( params.reads, flat: true )
             .ifEmpty { exit 1, "Read pair files could not be found: ${params.reads}" }
@@ -231,15 +233,15 @@ Running the ${params.pipeline} subworkflow
     }
     else if(params.pipeline == "bam_resistome"){
         log.info """\
-=======================================
-Running resistome analysis on bam files
-with bwa alignments to the MEGARes db.
+                    =======================================
+                    Running resistome analysis on bam files
+                    with bwa alignments to the MEGARes db.
 
-Use the --bam_files argument and change
-the --output flag to keep track of your
-standard vs deduped data.
-=======================================
-"""
+                    Use the --bam_files argument and change
+                    the --output flag to keep track of your
+                    standard vs deduped data.
+                    =======================================
+                """
         Channel
             .fromPath(params.bam_files)
             .ifEmpty { exit 1, "bam files could not be found: ${params.bam_files}" }
@@ -249,6 +251,27 @@ standard vs deduped data.
                 }
             .set {bam_files_ch}
         BAM_RESISTOME_WF( bam_files_ch , params.amr, params.annotation )
+    }
+    else if(params.pipeline == "bam_resistome_counts"){
+        log.info """\
+                    =======================================
+                    Running resistome analysis on bam files
+                    with bwa alignments to the MEGARes db.
+
+                    Use the --bam_files argument and change
+                    the --output flag to keep track of your
+                    standard vs deduped data.
+                    =======================================
+                """
+        Channel
+            .fromPath(params.bam_files)
+            .ifEmpty { exit 1, "bam files could not be found: ${params.bam_files}" }
+            .map { file ->
+            def modified_baseName = file.baseName.split('\\.')[0]
+              tuple(modified_baseName, file)
+                }
+            .set {bam_files_ch}
+        BAM_RESISTOME_COUNTS_WF( bam_files_ch , params.amr, params.annotation )
     }
     else {
             println "ERROR ################################################################"
