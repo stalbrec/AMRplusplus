@@ -28,14 +28,18 @@ process RunDeepargSS {
     input:
         tuple val(sample_id), path(reads) 
         path(deepargdb)
+        val modelVersion
+        val customModel 
     output:
         tuple val(sample_id), path("${sample_id}.mapping.*"), emit: ARG_mappings
 
     """
-        deeparg short_reads_pipeline -d $deepargdb \
+        deeparg $customModel short_reads_pipeline -d $deepargdb \
         --forward_pe_file ${reads[0]} \
         --reverse_pe_file ${reads[1]} \
-        --output_file $sample_id
+        --output_file $sample_id \
+        --bowtie_16s_identity 100 \
+        --deeparg_model_version $modelVersion
         for outfile in ARG potential.ARG ARG.merged ARG.merged.quant ARG.merged.quant.type ARG.merged.quant.subtype
         do
             mv ${sample_id}.clean.deeparg.mapping.\${outfile} ${sample_id}.mapping.\${outfile}

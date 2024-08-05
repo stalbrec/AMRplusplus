@@ -5,14 +5,20 @@ workflow FASTQ_DEEPARG_WF {
     take: 
         read_pairs_ch
         deepargdb
+        deepargVersion
         short_reads_pipeline
+        customModel
 
     main:
         println "using database from $deepargdb"
         if(deepargdb && file(deepargdb).exists() ){
             if(workflow.profile == "conda"){
                 if (short_reads_pipeline == true) {
-                    RunDeepargSS(read_pairs_ch, deepargdb)
+                    if (customModel == true){
+                        RunDeepargSS(read_pairs_ch, deepargdb, deepargVersion, "--custom-model")
+                    } else {
+                        RunDeepargSS(read_pairs_ch, deepargdb, deepargVersion, "")
+                    }
                 } else {
                     RunDeeparg(read_pairs_ch, deepargdb)
                 }
