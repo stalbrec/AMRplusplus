@@ -140,7 +140,7 @@ Running the ${params.pipeline} pipeline
         """
         STANDARD_AMRplusplus_wKraken(fastq_files,params.host, params.amr, params.annotation, params.kraken_db)
     } 
-    else if (params.pipeline == "standard_AMR_deepARG"){
+    else if (params.pipeline == "standard_AMR_wDeepARG"){
         log.info """\
 ===================================
 Running the ${params.pipeline} pipeline
@@ -154,7 +154,7 @@ Running the ${params.pipeline} pipeline
 Running the ${params.pipeline} subworkflow
 ===================================
         """
-        FASTQ_DEEPARG_WF( fastq_files, params.deeparg_db )
+        FASTQ_DEEPARG_WF( fastq_files, params.deeparg_db, true )
     } 
     else if(params.pipeline == "eval_qc") {
         log.info """\
