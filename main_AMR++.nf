@@ -77,6 +77,7 @@ params.pipeline = null
 include { STANDARD_AMRplusplus } from './subworkflows/AMR++_standard.nf' 
 include { FAST_AMRplusplus } from './subworkflows/AMR++_fast.nf'
 include { STANDARD_AMRplusplus_wKraken } from './subworkflows/AMR++_standard_wKraken.nf'
+include { STANDARD_AMRplusplus_wDeepARG } from './subworkflows/AMR++_standard_wDeepARG.nf'
 
 // Load subworkflows
 include { FASTQ_QC_WF } from './subworkflows/fastq_information.nf'
@@ -84,6 +85,7 @@ include { FASTQ_TRIM_WF } from './subworkflows/fastq_QC_trimming.nf'
 include { FASTQ_ALIGN_WF } from './subworkflows/fastq_align.nf'
 include { FASTQ_RM_HOST_WF } from './subworkflows/fastq_host_removal.nf' 
 include { FASTQ_RESISTOME_WF } from './subworkflows/fastq_resistome.nf'
+include { FASTQ_DEEPARG_WF } from './subworkflows/fastq_deeparg.nf'
 include { FASTQ_KRAKEN_WF } from './subworkflows/fastq_microbiome.nf'
 include { FASTQ_QIIME2_WF } from './subworkflows/fastq_16S_qiime2.nf'
 
@@ -137,6 +139,22 @@ Running the ${params.pipeline} pipeline
 ===================================
         """
         STANDARD_AMRplusplus_wKraken(fastq_files,params.host, params.amr, params.annotation, params.kraken_db)
+    } 
+    else if (params.pipeline == "standard_AMR_deepARG"){
+        log.info """\
+===================================
+Running the ${params.pipeline} pipeline
+===================================
+        """
+        STANDARD_AMRplusplus_wDeepARG(fastq_files, params.host, params.amr, params.annotation, params.deeparg_db)
+    }
+    else if(params.pipeline == "deeparg") {
+        log.info """\
+===================================
+Running the ${params.pipeline} subworkflow
+===================================
+        """
+        FASTQ_DEEPARG_WF( fastq_files, params.deeparg_db )
     } 
     else if(params.pipeline == "eval_qc") {
         log.info """\
