@@ -16,6 +16,8 @@ trailing = params.trailing
 slidingwindow = params.slidingwindow
 minlen = params.minlen
 
+legacy = params.legacy
+
 process runqc {
     tag { sample_id }
     label "trimming"
@@ -37,20 +39,32 @@ process runqc {
         tuple val(sample_id), path("${sample_id}*P.fastq.gz"), emit: paired_fastq
         tuple val(sample_id), path("${sample_id}*U.fastq.gz"), emit: unpaired_fastq
         path("${sample_id}.trimmomatic.stats.log"), emit: trimmomatic_stats
-
-    """
-     ${TRIMMOMATIC} \
-      PE \
-      -threads ${threads} \
-      ${reads[0]} ${reads[1]} ${sample_id}.1P.fastq.gz ${sample_id}.1U.fastq.gz ${sample_id}.2P.fastq.gz ${sample_id}.2U.fastq.gz \
-      ILLUMINACLIP:${adapters}:2:30:10:3:TRUE \
-      LEADING:${leading} \
-      TRAILING:${trailing} \
-      SLIDINGWINDOW:${slidingwindow} \
-      MINLEN:${minlen} \
-      2> ${sample_id}.trimmomatic.stats.log
-      
-    """
+    
+    script:
+    if ( legacy == "N" )
+        """
+        ${TRIMMOMATIC} \
+        PE \
+        -threads ${threads} \
+        ${reads[0]} ${reads[1]} ${sample_id}.1P.fastq.gz ${sample_id}.1U.fastq.gz ${sample_id}.2P.fastq.gz ${sample_id}.2U.fastq.gz \
+        ILLUMINACLIP:${adapters}:2:30:10:3:TRUE \
+        LEADING:${leading} \
+        TRAILING:${trailing} \
+        SLIDINGWINDOW:${slidingwindow} \
+        MINLEN:${minlen} \
+        2> ${sample_id}.trimmomatic.stats.log
+        
+        """
+    else if ( legacy == "Y" )
+        """
+        ${TRIMMOMATIC} \
+        PE \
+        -threads ${threads} \
+        -phred33 \
+        ${reads[0]} ${reads[1]} ${sample_id}.1P.fastq.gz ${sample_id}.1U.fastq.gz ${sample_id}.2P.fastq.gz ${sample_id}.2U.fastq.gz \
+        SLIDINGWINDOW:${slidingwindow} \
+        2> ${sample_id}.trimmomatic.stats.log        
+        """
 }
 
 process QCstats {
