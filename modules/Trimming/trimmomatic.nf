@@ -65,6 +65,9 @@ process runqc {
         SLIDINGWINDOW:${slidingwindow} \
         2> ${sample_id}.trimmomatic.stats.log        
         """
+    else
+        error "Invalid flag for legacy mode --deduped: ${legacy}. Either choose \"Y\" to enable running with AMR++ v1 settings and processes or keep the default v3 behaviour with \"N\""
+
 }
 
 process QCstats {
