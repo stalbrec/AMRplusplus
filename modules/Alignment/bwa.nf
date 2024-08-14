@@ -63,21 +63,27 @@ process bwa_align {
         tuple val(pair_id), path("${pair_id}_alignment_dedup.bam"), emit: bwa_dedup_bam, optional: true
 
     script:
-    if( deduped == "N")
+    def scriptContent = ""
+
+    if (legacy == "Y")
+        scriptContent += """
+        bwa aln -t ${threads} ${indexfiles[0]} ${reads[0]} > ${pair_id}_first_mate.sai
+        bwa aln -t ${threads} ${indexfiles[0]} ${reads[1]} > ${pair_id}_second_mate.sai
+        bwa sampe ${indexfiles[0]} ${pair_id}_first_mate.sai ${pair_id}_second_mate.sai ${reads} > ${pair_id}_alignment.sam
         """
+    else if (legacy == "N") 
+        scriptContent += """
         ${BWA} mem ${indexfiles[0]} ${reads} -t ${threads} -R '@RG\\tID:${pair_id}\\tSM:${pair_id}' > ${pair_id}_alignment.sam
+        """
+    scriptContent += """
         ${SAMTOOLS} view -@ ${threads} -S -b ${pair_id}_alignment.sam > ${pair_id}_alignment.bam
         rm ${pair_id}_alignment.sam
         ${SAMTOOLS} sort -@ ${threads} -n ${pair_id}_alignment.bam -o ${pair_id}_alignment_sorted.bam
         rm ${pair_id}_alignment.bam
         """
-    else if( deduped == "Y")
-        """
-        ${BWA} mem ${indexfiles[0]} ${reads} -t ${threads} -R '@RG\\tID:${pair_id}\\tSM:${pair_id}' > ${pair_id}_alignment.sam
-        ${SAMTOOLS} view -@ ${threads} -S -b ${pair_id}_alignment.sam > ${pair_id}_alignment.bam
-        rm ${pair_id}_alignment.sam
-        ${SAMTOOLS} sort -@ ${threads} -n ${pair_id}_alignment.bam -o ${pair_id}_alignment_sorted.bam
-        rm ${pair_id}_alignment.bam
+    
+    if (deduped == "Y") 
+        scriptContent += """
         ${SAMTOOLS} fixmate -@ ${threads} ${pair_id}_alignment_sorted.bam ${pair_id}_alignment_sorted_fix.bam
         ${SAMTOOLS} sort -@ ${threads} ${pair_id}_alignment_sorted_fix.bam -o ${pair_id}_alignment_sorted_fix.sorted.bam
         rm ${pair_id}_alignment_sorted_fix.bam
@@ -86,8 +92,11 @@ process bwa_align {
         ${SAMTOOLS} view -@ ${threads} -h -o ${pair_id}_alignment_dedup.sam ${pair_id}_alignment_dedup.bam
         rm ${pair_id}_alignment_dedup.sam
         """
-    else
+    else if (deduped != "N")
         error "Invalid deduplication flag --deduped: ${deduped}. Please use --deduped Y for deduplicated counts, or avoid using this flag altogether to skip this error."
+
+    // Execute the constructed script
+    scriptContent
 }
 
 process bwa_rm_contaminant_fq {
