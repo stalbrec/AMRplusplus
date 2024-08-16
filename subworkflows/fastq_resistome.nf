@@ -2,7 +2,7 @@
 include { index ; bwa_align } from '../modules/Alignment/bwa'
 
 // resistome
-include {plotrarefaction ; runresistome ; runsnp ; resistomeresults ; runrarefaction ; build_dependencies ; snpresults} from '../modules/Resistome/resistome'
+include {plotrarefaction ; runresistome ; runsnp ; resistomeresults ; runrarefaction ; build_dependencies; build_legacy_dependencies ; snpresults} from '../modules/Resistome/resistome'
 
 // Deduped resistome
 include { BAM_DEDUP_RESISTOME_WF } from '../subworkflows/bam_deduped_resistome.nf'
@@ -27,6 +27,13 @@ workflow FASTQ_RESISTOME_WF {
             amrsnp = file("${baseDir}/bin/AmrPlusPlus_SNP/*")
             resistomeanalyzer = file("${baseDir}/bin/resistome")
             rarefactionanalyzer = file("${baseDir}/bin/rarefaction")
+        }
+        if ( params.legacy == "Y"){
+            if (file("${baseDir}/bin/legacyRarefaction").isEmpty()){
+                build_legacy_dependencies()
+            }
+            resistomeanalyzer = file("${baseDir}/bin/legacyResistome")
+            rarefactionanalyzer = file("${baseDir}/bin/legacyRarefaction")
         }
         // Define amr_index_files variable
         if (params.amr_index == null) {
