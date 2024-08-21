@@ -12,8 +12,10 @@ parser.add_argument('--dir', type=str, help='path (relative or absolute) to the 
 parser.add_argument('--nd', action='store_true', help='no display: whether to display the generated graphs, typically used with -s')
 parser.add_argument('--s', action='store_true', help='save: whether to save the generated graphs')
 parser.add_argument('--sd', type=str, help='save directory: path (relative or absolute) at which to save the graphs if -s is used')
-
+parser.add_argument('--with-type', type=str, default="N", help="(Y/N) Whether or not to assume the type data is available (not gonna be there for legacy v1 runs).")
 args = parser.parse_args()
+
+plot_type_data = (args.with_type == "Y")
 
 # empty initializations that are later sorted with values
 x_gene, y_gene = [], []
@@ -64,7 +66,8 @@ for fn in os.listdir(dir):
 # displays retrieved data using PyPlot
 
 sps = []
-for i in range (5):
+n_sps = 5 if plot_type_data else 4
+for i in range (n_sps):
     sps.append(plt.subplots()) # creates a list of tuples with the figure and axes objects
 
 # plots the data from each sample list
@@ -73,10 +76,11 @@ for i in range (len(names)):
     sps[1][1].plot(x_group[i], y_group[i], label=names[i])
     sps[2][1].plot(x_mech[i], y_mech[i], label=names[i])
     sps[3][1].plot(x_class[i], y_class[i], label=names[i])
-    sps[4][1].plot(x_type[i], y_type[i], label=names[i])
+    if plot_type_data:
+        sps[4][1].plot(x_type[i], y_type[i], label=names[i])
 
 # adds additional formatting to the graphs
-for i in range(5):
+for i in range(n_sps):
     sps[i][1].set_xlabel('% of data subsampled')
     sps[i][1].set_ylabel('unique features identified')
     sps[i][1].legend(bbox_to_anchor=(1.05,1.0), loc='upper left')
@@ -91,7 +95,8 @@ sps[0][1].set_title('Gene Subsampling Features')
 sps[1][1].set_title('Group Subsampling Features')
 sps[2][1].set_title('Mech Subsampling Features')
 sps[3][1].set_title('Class Subsampling Features')
-sps[4][1].set_title('Type Subsampling Features')
+if plot_type_data:
+    sps[4][1].set_title('Type Subsampling Features')
 
 # displays graphing windows
 if (not args.nd):
@@ -109,4 +114,5 @@ if (args.s):
     sps[1][0].savefig(sd + 'Group.png')
     sps[2][0].savefig(sd + 'Mech.png')
     sps[3][0].savefig(sd + 'Class.png')
-    sps[4][0].savefig(sd + 'Type.png')
+    if plot_type_data:
+        sps[4][0].savefig(sd + 'Type.png')

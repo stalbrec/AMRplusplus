@@ -17,6 +17,36 @@ samples = params.samples
 deduped = params.deduped
 prefix = params.prefix
 
+process build_legacy_dependencies {
+    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+    maxRetries 3
+    publishDir "${baseDir}/bin", mode: "copy"
+
+    output:
+        path("legacyRarefaction"), emit: rarefactionanalyzer
+        path("legacyResistome"), emit: resistomeanalyzer
+
+    script:
+        """
+        git clone -b amrpp_v1_legacy https://github.com/stalbrec/rarefactionanalyzer
+        cd rarefactionanalyzer
+        make
+        chmod 777 rarefaction
+        mv rarefaction ../legacyRarefaction
+        cd ../
+        rm -rf rarefactionanalyzer
+
+        git clone -b amrpp_v1_legacy https://github.com/stalbrec/resistomeanalyzer
+        cd resistomeanalyzer
+        make
+        chmod 777 resistome
+        mv resistome ../legacyResistome
+        cd ../
+        rm -rf resistomeanalyzer
+        """
+}
+
+
 process build_dependencies {
     tag { dl_dependencies }
     label "python"
@@ -84,8 +114,8 @@ process runresistome {
         path("${sample_id}.${prefix}.gene.tsv"), emit: resistome_counts
 
     
-    
-    """
+    script:
+    def scriptContent="""
     samtools view -h ${bam} > ${sample_id}.sam
     
     $resistome -ref_fp ${amr} \
@@ -95,11 +125,20 @@ process runresistome {
       -group_fp ${sample_id}.${prefix}.group.tsv \
       -mech_fp ${sample_id}.${prefix}.mechanism.tsv \
       -class_fp ${sample_id}.${prefix}.class.tsv \
-      -type_fp ${sample_id}.${prefix}.type.tsv \
       -t ${threshold}
+    """
+    if(params.output == "N"){
+        scriptContent += """
+          -type_fp ${sample_id}.${prefix}.type.tsv \
+        """
+    }
 
+    scriptContent += """
+    
     rm ${sample_id}.sam
     """
+
+    scriptContent
 }
 
 process resistomeresults {
@@ -145,7 +184,8 @@ process runrarefaction {
     output:
         path("*.tsv"), emit: rarefaction
 
-    """
+    script:
+    def scriptContent = """
     samtools view -h ${bam} > ${sample_id}.sam
 
     $rarefaction \
@@ -156,15 +196,22 @@ process runrarefaction {
       -group_fp ${sample_id}.group.tsv \
       -mech_fp ${sample_id}.mech.tsv \
       -class_fp ${sample_id}.class.tsv \
-      -type_fp ${sample_id}.type.tsv \
       -min ${min} \
       -max ${max} \
       -skip ${skip} \
       -samples ${samples} \
       -t ${threshold}
+    """
 
+    if( params.legacy == "N" ){
+        scriptContent += """
+          -type_fp ${sample_id}.type.tsv \
+        """
+    }
+    scriptContent+="""
     rm ${sample_id}.sam
     """
+    scriptContent
 }
 
 process plotrarefaction {

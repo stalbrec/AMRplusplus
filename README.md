@@ -3,7 +3,12 @@ Overview
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Nextflow](https://img.shields.io/badge/Nextflow-%E2%89%A50.25.1-brightgreen.svg)](https://www.nextflow.io/)
 
-
+## reproduce v1 galaxy workflow results:
+In order to be able to reproduce the results of the older v1 workflow in galaxy, this branch has the necessary modifications and uses downgraded versions of resistomeanalyzer and rarefactionanalyzer as well as the alignment scheme using the `bwa aln` algorightm.  
+To start a run with the exact settings for all sub-workflows one can simply run:
+```
+nextflow run ../main_AMR++.nf -profile conda --reads '../data/raw/S3_test_R{1,2}.fastq.gz' --pipeline standard_AMR --output v1_results_cli --legacy Y --deduped N --slidingwindow '4:20' --threshold 1 --min 1 --skip 1
+```
 # AMR++ bioinformatic pipeline
 (https://megares.meglab.org/)
 

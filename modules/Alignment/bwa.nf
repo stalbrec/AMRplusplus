@@ -15,6 +15,8 @@ threads = params.threads
 
 deduped = params.deduped
 
+legacy = params.legacy
+
 process index {
     tag "Creating bwa index"
     label "alignment"
@@ -61,21 +63,27 @@ process bwa_align {
         tuple val(pair_id), path("${pair_id}_alignment_dedup.bam"), emit: bwa_dedup_bam, optional: true
 
     script:
-    if( deduped == "N")
+    def scriptContent = ""
+
+    if (legacy == "Y")
+        scriptContent += """
+        bwa aln -t ${threads} ${indexfiles[0]} ${reads[0]} > ${pair_id}_first_mate.sai
+        bwa aln -t ${threads} ${indexfiles[0]} ${reads[1]} > ${pair_id}_second_mate.sai
+        bwa sampe ${indexfiles[0]} ${pair_id}_first_mate.sai ${pair_id}_second_mate.sai ${reads} > ${pair_id}_alignment.sam
         """
+    else if (legacy == "N") 
+        scriptContent += """
         ${BWA} mem ${indexfiles[0]} ${reads} -t ${threads} -R '@RG\\tID:${pair_id}\\tSM:${pair_id}' > ${pair_id}_alignment.sam
+        """
+    scriptContent += """
         ${SAMTOOLS} view -@ ${threads} -S -b ${pair_id}_alignment.sam > ${pair_id}_alignment.bam
         rm ${pair_id}_alignment.sam
         ${SAMTOOLS} sort -@ ${threads} -n ${pair_id}_alignment.bam -o ${pair_id}_alignment_sorted.bam
         rm ${pair_id}_alignment.bam
         """
-    else if( deduped == "Y")
-        """
-        ${BWA} mem ${indexfiles[0]} ${reads} -t ${threads} -R '@RG\\tID:${pair_id}\\tSM:${pair_id}' > ${pair_id}_alignment.sam
-        ${SAMTOOLS} view -@ ${threads} -S -b ${pair_id}_alignment.sam > ${pair_id}_alignment.bam
-        rm ${pair_id}_alignment.sam
-        ${SAMTOOLS} sort -@ ${threads} -n ${pair_id}_alignment.bam -o ${pair_id}_alignment_sorted.bam
-        rm ${pair_id}_alignment.bam
+    
+    if (deduped == "Y") 
+        scriptContent += """
         ${SAMTOOLS} fixmate -@ ${threads} ${pair_id}_alignment_sorted.bam ${pair_id}_alignment_sorted_fix.bam
         ${SAMTOOLS} sort -@ ${threads} ${pair_id}_alignment_sorted_fix.bam -o ${pair_id}_alignment_sorted_fix.sorted.bam
         rm ${pair_id}_alignment_sorted_fix.bam
@@ -84,8 +92,11 @@ process bwa_align {
         ${SAMTOOLS} view -@ ${threads} -h -o ${pair_id}_alignment_dedup.sam ${pair_id}_alignment_dedup.bam
         rm ${pair_id}_alignment_dedup.sam
         """
-    else
+    else if (deduped != "N")
         error "Invalid deduplication flag --deduped: ${deduped}. Please use --deduped Y for deduplicated counts, or avoid using this flag altogether to skip this error."
+
+    // Execute the constructed script
+    scriptContent
 }
 
 process bwa_rm_contaminant_fq {
@@ -109,22 +120,46 @@ process bwa_rm_contaminant_fq {
     tuple val(pair_id), path("${pair_id}.non.host.R*.fastq.gz"), emit: nonhost_reads
     path("${pair_id}.samtools.idxstats"), emit: host_rm_stats
     
-    """
-    ${BWA} mem ${indexfiles[0]} ${reads[0]} ${reads[1]} -t ${threads} > ${pair_id}.host.sam
-    ${SAMTOOLS} view -bS ${pair_id}.host.sam | ${SAMTOOLS} sort -@ ${threads} -o ${pair_id}.host.sorted.bam
-    rm ${pair_id}.host.sam
-    ${SAMTOOLS} index ${pair_id}.host.sorted.bam && ${SAMTOOLS} idxstats ${pair_id}.host.sorted.bam > ${pair_id}.samtools.idxstats
-    ${SAMTOOLS} view -h -f 12 -b ${pair_id}.host.sorted.bam -o ${pair_id}.host.sorted.removed.bam
-    ${SAMTOOLS} sort -n -@ ${threads} ${pair_id}.host.sorted.removed.bam -o ${pair_id}.host.resorted.removed.bam
-    ${SAMTOOLS}  \
-       fastq -@ ${threads} -c 6  \
-      ${pair_id}.host.resorted.removed.bam \
-      -1 ${pair_id}.non.host.R1.fastq.gz \
-      -2 ${pair_id}.non.host.R2.fastq.gz \
-      -0 /dev/null -s /dev/null -n
+    script:
 
-    rm *.bam
-    """
+    if( legacy == "Y" )
+        """
+        ${BWA} aln -t ${threads} ${indexfiles[0]} ${reads[0]} > ${pair_id}_first_mate.sai
+        ${BWA} aln -t ${threads} ${indexfiles[0]} ${reads[1]} > ${pair_id}_second_mate.sai
+        ${BWA} sampe ${indexfiles[0]} ${pair_id}_first_mate.sai ${pair_id}_second_mate.sai ${reads} | ${SAMTOOLS} view -Sb - > ${pair_id}.host.bam
+        ${SAMTOOLS} sort -@ ${threads} -o ${pair_id}.host.sorted.bam ${pair_id}.host.bam 
+        ${SAMTOOLS} index ${pair_id}.host.sorted.bam && ${SAMTOOLS} idxstats ${pair_id}.host.sorted.bam > ${pair_id}.samtools.idxstats
+        ${SAMTOOLS} view -@ ${threads} -f 13 -b -o ${pair_id}.host.sorted.filtered.bam ${pair_id}.host.sorted.bam
+        ${SAMTOOLS} sort -n -@ ${threads} -o ${pair_id}.host.sorted.filtered.resorted.bam ${pair_id}.host.sorted.filtered.bam
+        ${SAMTOOLS}  \
+        fastq -@ ${threads} -c 6  \
+        ${pair_id}.host.sorted.filtered.resorted.bam \
+        -1 ${pair_id}.non.host.R1.fastq.gz \
+        -2 ${pair_id}.non.host.R2.fastq.gz \
+        -0 /dev/null -s /dev/null -n
+
+        rm *.bam
+        """
+    else if( legacy == "N" )
+        """
+        ${BWA} mem ${indexfiles[0]} ${reads[0]} ${reads[1]} -t ${threads} > ${pair_id}.host.sam
+        ${SAMTOOLS} view -bS ${pair_id}.host.sam | ${SAMTOOLS} sort -@ ${threads} -o ${pair_id}.host.sorted.bam
+        rm ${pair_id}.host.sam
+        ${SAMTOOLS} index ${pair_id}.host.sorted.bam && ${SAMTOOLS} idxstats ${pair_id}.host.sorted.bam > ${pair_id}.samtools.idxstats
+        ${SAMTOOLS} view -h -f 12 -b ${pair_id}.host.sorted.bam -o ${pair_id}.host.sorted.removed.bam
+        ${SAMTOOLS} sort -n -@ ${threads} ${pair_id}.host.sorted.removed.bam -o ${pair_id}.host.resorted.removed.bam
+        ${SAMTOOLS}  \
+        fastq -@ ${threads} -c 6  \
+        ${pair_id}.host.resorted.removed.bam \
+        -1 ${pair_id}.non.host.R1.fastq.gz \
+        -2 ${pair_id}.non.host.R2.fastq.gz \
+        -0 /dev/null -s /dev/null -n
+
+        rm *.bam
+        """
+    else
+        error "Invalid flag for legacy mode --deduped: ${legacy}. Either choose \"Y\" to enable running with AMR++ v1 settings and processes or keep the default v3 behaviour with \"N\""
+
 
 }
 
