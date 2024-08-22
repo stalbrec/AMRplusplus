@@ -127,7 +127,7 @@ process runresistome {
       -class_fp ${sample_id}.${prefix}.class.tsv \
       -t ${threshold}
     """
-    if(params.output == "N"){
+    if(params.legacy == "N"){
         scriptContent += """
           -type_fp ${sample_id}.${prefix}.type.tsv \
         """

@@ -19,6 +19,12 @@ workflow BAM_RESISTOME_COUNTS_WF {
             amrsnp = file("${baseDir}/bin/AmrPlusPlus_SNP/*")
             resistomeanalyzer = file("${baseDir}/bin/resistome")
         }
+        if ( params.legacy == "Y"){
+            if (file("${baseDir}/bin/legacyRarefaction").isEmpty()){
+                build_legacy_dependencies()
+            }
+            resistomeanalyzer = file("${baseDir}/bin/legacyResistome")
+        }
         // Split sections below for standard and dedup_ed results
         runresistome(bam_ch,amr, annotation, resistomeanalyzer )
         resistomeresults(runresistome.out.resistome_counts.collect())
