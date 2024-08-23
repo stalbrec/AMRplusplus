@@ -125,12 +125,9 @@ process runresistome {
       -group_fp ${sample_id}.${prefix}.group.tsv \
       -mech_fp ${sample_id}.${prefix}.mechanism.tsv \
       -class_fp ${sample_id}.${prefix}.class.tsv \
-      -t ${threshold}
-    """
+      -t ${threshold}"""
     if(params.legacy == "N"){
-        scriptContent += """
-          -type_fp ${sample_id}.${prefix}.type.tsv \
-        """
+        scriptContent += " -type_fp ${sample_id}.${prefix}.type.tsv "
     }
 
     scriptContent += """
@@ -200,13 +197,10 @@ process runrarefaction {
       -max ${max} \
       -skip ${skip} \
       -samples ${samples} \
-      -t ${threshold}
-    """
+      -t ${threshold}"""
 
     if( params.legacy == "N" ){
-        scriptContent += """
-          -type_fp ${sample_id}.type.tsv \
-        """
+        scriptContent += " -type_fp ${sample_id}.type.tsv "
     }
     scriptContent+="""
     rm ${sample_id}.sam
