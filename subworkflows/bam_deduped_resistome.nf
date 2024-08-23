@@ -24,9 +24,12 @@ workflow BAM_DEDUP_RESISTOME_WF {
         if ( params.legacy == "Y"){
             if (file("${baseDir}/bin/legacyRarefaction").isEmpty()){
                 build_legacy_dependencies()
+                resistomeanalyzer = build_legacy_dependencies.out.resistomeanalyzer
+                rarefactionanalyzer = build_legacy_dependencies.out.rarefactionanalyzer
+            } else {
+                resistomeanalyzer = file("${baseDir}/bin/legacyResistome")
+                rarefactionanalyzer = file("${baseDir}/bin/legacyRarefaction")
             }
-            resistomeanalyzer = build_legacy_dependencies.out.resistomeanalyzer
-            rarefactionanalyzer = build_legacy_dependencies.out.rarefactionanalyzer
         }
         runresistome_dedup(bam_ch,amr, annotation, resistomeanalyzer )
         resistomeresults_dedup(runresistome_dedup.out.resistome_counts.collect())
