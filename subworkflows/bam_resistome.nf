@@ -25,8 +25,8 @@ workflow BAM_RESISTOME_WF {
             if (file("${baseDir}/bin/legacyRarefaction").isEmpty()){
                 build_legacy_dependencies()
             }
-            resistomeanalyzer = file("${baseDir}/bin/legacyResistome")
-            rarefactionanalyzer = file("${baseDir}/bin/legacyRarefaction")
+            resistomeanalyzer = build_legacy_dependencies.out.resistomeanalyzer
+            rarefactionanalyzer = build_legacy_dependencies.out.rarefactionanalyzer
         }
         // Split sections below for standard and dedup_ed results
         runresistome(bam_ch,amr, annotation, resistomeanalyzer )

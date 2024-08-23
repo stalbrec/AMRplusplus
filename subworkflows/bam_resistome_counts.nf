@@ -23,7 +23,7 @@ workflow BAM_RESISTOME_COUNTS_WF {
             if (file("${baseDir}/bin/legacyRarefaction").isEmpty()){
                 build_legacy_dependencies()
             }
-            resistomeanalyzer = file("${baseDir}/bin/legacyResistome")
+            resistomeanalyzer = build_legacy_dependencies.out.resistomeanalyzer
         }
         // Split sections below for standard and dedup_ed results
         runresistome(bam_ch,amr, annotation, resistomeanalyzer )

@@ -32,8 +32,8 @@ workflow FASTQ_RESISTOME_WF {
             if (file("${baseDir}/bin/legacyRarefaction").isEmpty()){
                 build_legacy_dependencies()
             }
-            resistomeanalyzer = file("${baseDir}/bin/legacyResistome")
-            rarefactionanalyzer = file("${baseDir}/bin/legacyRarefaction")
+            resistomeanalyzer = build_legacy_dependencies.out.resistomeanalyzer
+            rarefactionanalyzer = build_legacy_dependencies.out.rarefactionanalyzer
         }
         // Define amr_index_files variable
         if (params.amr_index == null) {
