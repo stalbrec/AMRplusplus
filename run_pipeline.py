@@ -13,12 +13,13 @@ if __name__ == "__main__":
     parser.add_argument("--dedup", action="store_true", help="specfify in order to enable deduplication in AMR++ pipeline.")
     parser.add_argument("--debug", action="store_true", help="do not execute anything. just print the commands for debugging.")
     parser.add_argument("--output", type=str, help="optional: specify where to store results. default is wherever reads are located")
+    parser.add_argument("--threads", type=int, default=4, help="number of threads parameter passed on to nextflow")
     args = parser.parse_args()
 
     check_tools = ["nextflow"]
 
     if args.profile == "local":
-        check_tools += ["bwa", "samtools","fastqc"]
+        check_tools += ["bwa", "samtools"]
 
     for tool in check_tools:
         try:
@@ -36,10 +37,10 @@ if __name__ == "__main__":
         cmd += " --deduped N "
 
     def process_reads(cmd_, reads_pattern, output_dir):
-        cmd_ += " --reads \"{}\" ".format(reads_pattern)
+        cmd_ += " --reads \"{}\" ".format(os.path.expanduser(reads_pattern))
 
         if output_dir is None:
-            output_dir = os.path.abspath("/".join(reads_pattern.split("/")[:-1]))
+            output_dir = os.path.abspath(os.path.expanduser(("/".join(reads_pattern.split("/")[:-1]))))
         if not os.path.exists(output_dir):
             raise NotADirectoryError("The specified output directory ({}) does not exist!".format(output_dir))
         cmd_ += " --output \"{}\" ".format(output_dir)
