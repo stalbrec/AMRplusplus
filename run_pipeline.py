@@ -36,6 +36,8 @@ if __name__ == "__main__":
     if args.dedup:
         cmd += " --deduped N "
 
+    cmd += " --threads {} ".format(args.threads)
+    
     def process_reads(cmd_, reads_pattern, output_dir):
         cmd_ += " --reads \"{}\" ".format(os.path.expanduser(reads_pattern))
 
