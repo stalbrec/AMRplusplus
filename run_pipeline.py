@@ -14,7 +14,7 @@ if __name__ == "__main__":
     parser.add_argument("--dedup", action="store_true", help="specfify in order to enable deduplication in AMR++ pipeline.")
     parser.add_argument("--debug", action="store_true", help="do not execute anything. just print the commands for debugging.")
     parser.add_argument("--output", type=str, help="optional: specify where to store results. default is wherever reads are located")
-    parser.add_argument("--threads", type=int, default=4, help="number of threads parameter passed on to nextflow")
+    parser.add_argument("--threads", type=int, default=10, help="number of threads parameter passed on to nextflow")
     parser.add_argument("--host", default="data/host/chr21.fasta.gz", help="path to host genome fasta for host-removal.")
     parser.add_argument("--snp", action="store_true", help="Perform SNP analysis.")
     parser.add_argument("--pipeline", default="standard_AMR", choices=["standard_AMR","standard_AMR_wKraken"], help="specify which AMR++ pipeline you want to run.")
