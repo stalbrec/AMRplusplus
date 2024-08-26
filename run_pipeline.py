@@ -54,6 +54,8 @@ if __name__ == "__main__":
 
     cmd += " --kraken_db \"{}\"".format(kraken_db)
 
+    cmd += " --kraken_memory_mapping \"Y\" "
+
     cmd += " --threads {} ".format(args.threads)
     
     def process_reads(cmd_, reads_pattern, output_dir):
@@ -67,7 +69,7 @@ if __name__ == "__main__":
 
         if not os.path.exists(output_dir):
             raise NotADirectoryError("The specified output directory ({}) does not exist!".format(output_dir))
-        
+
         cmd_ += " --output \"{}\" ".format(output_dir)
 
         print("executing: " + cmd_)

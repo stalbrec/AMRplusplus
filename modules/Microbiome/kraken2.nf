@@ -3,6 +3,7 @@ params.readlen = 150
 
 threads = params.threads
 kraken_confidence = params.kraken_confidence
+def kraken_memory_mapping_args = (params.kraken_memory_mapping == "Y") ? " --memory-mapping " : " "
 
 process dlkraken {
     tag { }
@@ -49,7 +50,7 @@ process runkraken {
 
 
      """
-     ${KRAKEN2} --db ${krakendb} --confidence ${kraken_confidence} --paired ${reads[0]} ${reads[1]} --threads ${threads} --report ${sample_id}.conf_${kraken_confidence}.kraken.report > ${sample_id}.conf_${kraken_confidence}.kraken.raw
+     ${KRAKEN2} --db ${krakendb} ${kraken_memory_mapping_args} --confidence ${kraken_confidence} --paired ${reads[0]} ${reads[1]} --threads ${threads} --report ${sample_id}.conf_${kraken_confidence}.kraken.report > ${sample_id}.conf_${kraken_confidence}.kraken.raw
 
      cut -f 2,3  ${sample_id}.conf_${kraken_confidence}.kraken.raw > ${sample_id}.conf_${kraken_confidence}.kraken.krona
     """
