@@ -14,6 +14,7 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true", help="do not execute anything. just print the commands for debugging.")
     parser.add_argument("--output", type=str, help="optional: specify where to store results. default is wherever reads are located")
     parser.add_argument("--threads", type=int, default=4, help="number of threads parameter passed on to nextflow")
+    parser.add_argument("--host", help="path to host genome")
     args = parser.parse_args()
 
     check_tools = ["nextflow"]
