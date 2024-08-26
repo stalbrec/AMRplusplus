@@ -3,6 +3,7 @@ from __future__ import print_function
 import argparse
 import os
 import subprocess
+from pathlib import Path
 
 
 if __name__ == "__main__":
@@ -21,7 +22,17 @@ if __name__ == "__main__":
 
     check_tools = ["nextflow"]
 
+    user_workdir = Path(".workdir_{}".format(os.environ["USER"]))
+    if(not os.path.exists(user_workdir)):
+        print("creating user workdir: {}".format(user_workdir))
+        os.makedirs(user_workdir)
+ 
+    def resolve_path(rel):
+        return Path(rel).expanduser().resolve()
+    __script_dir__ = Path(__file__).resolve().parent
+
     kraken_db = os.environ.get("KRAKEN2_DB", "/home/admin/seq_tools/kraken2/kraken2_DB")
+    kraken_db = resolve_path(kraken_db)
 
     if args.profile == "local":
         check_tools += ["bwa", "samtools"]
@@ -32,9 +43,9 @@ if __name__ == "__main__":
         except BaseException:
             raise RuntimeError("Could not find depency \"{}\". Make sure your environment is setup correctly.".format(tool))
 
-    cmd = "nextflow run main_AMR++.nf -profile {}".format(args.profile)
+    cmd = "nextflow run {}/main_AMR++.nf -profile {}".format(__script_dir__, args.profile)
 
-    cmd += " --pipeline standard_AMR_wKraken"
+    cmd += " --pipeline {} ".format(args.pipeline)
 
     if args.version == 1:
         cmd += " --legacy Y --slidingwindow '4:20' --threshold 1 --min 1 --skip 1 "
@@ -46,17 +57,22 @@ if __name__ == "__main__":
     cmd += " --threads {} ".format(args.threads)
     
     def process_reads(cmd_, reads_pattern, output_dir):
-        cmd_ += " --reads \"{}\" ".format(os.path.expanduser(reads_pattern))
+        reads_pattern = resolve_path(reads_pattern)
+        cmd_ += " --reads \"{}\" ".format(reads_pattern)
 
         if output_dir is None:
-            output_dir = os.path.abspath(os.path.expanduser(("/".join(reads_pattern.split("/")[:-1]))))
+            output_dir = reads_pattern.parent
         if not os.path.exists(output_dir):
             raise NotADirectoryError("The specified output directory ({}) does not exist!".format(output_dir))
+        
         cmd_ += " --output \"{}\" ".format(output_dir)
 
         print("executing: " + cmd_)
+        cwd = os.getcwd()
         if not args.debug:
-           os.system(cmd_)
+            os.chdir(user_workdir)
+            os.system(cmd_)
+            os.chdir(cwd)
 
     if "{" in args.reads:
         process_reads(cmd, args.reads, args.output)
