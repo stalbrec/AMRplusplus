@@ -49,8 +49,12 @@ if __name__ == "__main__":
 
     if args.version == 1:
         cmd += " --legacy Y --slidingwindow '4:20' --threshold 1 --min 1 --skip 1 "
+
     if args.dedup:
-        cmd += " --deduped N "
+        cmd += " --deduped Y "
+
+    if args.snp:
+        cmd += " --snp Y "
 
     cmd += " --kraken_db \"{}\"".format(kraken_db)
 
