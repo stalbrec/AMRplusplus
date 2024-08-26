@@ -62,6 +62,9 @@ if __name__ == "__main__":
 
         if output_dir is None:
             output_dir = reads_pattern.parent
+        else:
+            output_dir = resolve_path(output_dir)
+
         if not os.path.exists(output_dir):
             raise NotADirectoryError("The specified output directory ({}) does not exist!".format(output_dir))
         
