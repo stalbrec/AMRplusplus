@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     if args.host is not None:
         params["host"] = resolve_path(args.host).as_posix()
-        params["host-index"] = "REPLACENULL"
+        params["host_index"] = "REPLACENULL"
 
     if args.version == 1:
         params["legacy"]="Y"
