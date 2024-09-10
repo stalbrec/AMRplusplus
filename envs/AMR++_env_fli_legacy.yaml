@@ -1,0 +1,20 @@
+name: AMR++_env
+channels:
+  - bioconda
+  - conda-forge
+  - anaconda
+dependencies:
+  - bwa = 0.7.12
+  - samtools=1.2
+  - multiqc
+  - fastqc
+  - kraken2
+  - python = 3.9
+  - matplotlib
+  - numpy
+  - pysam
+  - pandas
+  - trimmomatic = 0.32
+  - biopython
+  - nextflow
+  - git
