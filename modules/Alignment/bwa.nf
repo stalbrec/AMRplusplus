@@ -78,14 +78,14 @@ process bwa_align {
     scriptContent += """
         ${SAMTOOLS} view -@ ${threads} -S -b ${pair_id}_alignment.sam > ${pair_id}_alignment.bam
         rm ${pair_id}_alignment.sam
-        ${SAMTOOLS} sort -@ ${threads} -n ${pair_id}_alignment.bam -o ${pair_id}_alignment_sorted.bam
+        ${SAMTOOLS} sort -@ ${threads} -n ${pair_id}_alignment.bam -o ${pair_id}_alignment_sorted.bam -O bam -T ${pair_id}_temp_alignment_sorted
         rm ${pair_id}_alignment.bam
         """
     
     if (deduped == "Y") 
         scriptContent += """
         ${SAMTOOLS} fixmate -@ ${threads} ${pair_id}_alignment_sorted.bam ${pair_id}_alignment_sorted_fix.bam
-        ${SAMTOOLS} sort -@ ${threads} ${pair_id}_alignment_sorted_fix.bam -o ${pair_id}_alignment_sorted_fix.sorted.bam
+        ${SAMTOOLS} sort -@ ${threads} ${pair_id}_alignment_sorted_fix.bam -o ${pair_id}_alignment_sorted_fix.sorted.bam -O bam -T ${pair_id}_temp_alignment_fix_sorted
         rm ${pair_id}_alignment_sorted_fix.bam
         ${SAMTOOLS} rmdup -S ${pair_id}_alignment_sorted_fix.sorted.bam ${pair_id}_alignment_dedup.bam
         rm ${pair_id}_alignment_sorted_fix.sorted.bam
@@ -127,16 +127,16 @@ process bwa_rm_contaminant_fq {
         ${BWA} aln -t ${threads} ${indexfiles[0]} ${reads[0]} > ${pair_id}_first_mate.sai
         ${BWA} aln -t ${threads} ${indexfiles[0]} ${reads[1]} > ${pair_id}_second_mate.sai
         ${BWA} sampe ${indexfiles[0]} ${pair_id}_first_mate.sai ${pair_id}_second_mate.sai ${reads} | ${SAMTOOLS} view -Sb - > ${pair_id}.host.bam
-        ${SAMTOOLS} sort -@ ${threads} -o ${pair_id}.host.sorted.bam ${pair_id}.host.bam 
+        ${SAMTOOLS} sort -@ ${threads} -o ${pair_id}.host.sorted.bam -O bam -T ${pair_id}_temp_host ${pair_id}.host.bam 
         ${SAMTOOLS} index ${pair_id}.host.sorted.bam && ${SAMTOOLS} idxstats ${pair_id}.host.sorted.bam > ${pair_id}.samtools.idxstats
         ${SAMTOOLS} view -@ ${threads} -f 13 -b -o ${pair_id}.host.sorted.filtered.bam ${pair_id}.host.sorted.bam
-        ${SAMTOOLS} sort -n -@ ${threads} -o ${pair_id}.host.sorted.filtered.resorted.bam ${pair_id}.host.sorted.filtered.bam
-        ${SAMTOOLS}  \
-        fastq -@ ${threads} -c 6  \
-        ${pair_id}.host.sorted.filtered.resorted.bam \
-        -1 ${pair_id}.non.host.R1.fastq.gz \
-        -2 ${pair_id}.non.host.R2.fastq.gz \
-        -0 /dev/null -s /dev/null -n
+        ${SAMTOOLS} sort -n -@ ${threads} -o ${pair_id}.host.sorted.filtered.resorted.bam -O bam -T ${pair_id}_temp_resorted_host ${pair_id}.host.sorted.filtered.bam
+        ${SAMTOOLS} view -@ ${threads} -f 64 -b -o ${pair_id}.R1.host.sorted.filtered.resorted.bam ${pair_id}.host.sorted.filtered.resorted.bam
+        ${SAMTOOLS} view -@ ${threads} -F 64 -b -o ${pair_id}.R2.host.sorted.filtered.resorted.bam ${pair_id}.host.sorted.filtered.resorted.bam
+        ${SAMTOOLS} bam2fq ${pair_id}.R1.host.sorted.filtered.resorted.bam -n > ${pair_id}.non.host.R1.fastq
+        gzip ${pair_id}.non.host.R1.fastq
+        ${SAMTOOLS} bam2fq ${pair_id}.R2.host.sorted.filtered.resorted.bam -n > ${pair_id}.non.host.R2.fastq
+        gzip ${pair_id}.non.host.R2.fastq
 
         rm *.bam
         """
