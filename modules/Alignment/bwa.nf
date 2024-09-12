@@ -131,8 +131,8 @@ process bwa_rm_contaminant_fq {
         ${SAMTOOLS} index ${pair_id}.host.sorted.bam && ${SAMTOOLS} idxstats ${pair_id}.host.sorted.bam > ${pair_id}.samtools.idxstats
         ${SAMTOOLS} view -@ ${threads} -f 13 -b -o ${pair_id}.host.sorted.filtered.bam ${pair_id}.host.sorted.bam
         ${SAMTOOLS} sort -n -@ ${threads} -o ${pair_id}.host.sorted.filtered.resorted.bam -O bam -T ${pair_id}_temp_resorted_host ${pair_id}.host.sorted.filtered.bam
-        ${SAMTOOLS} view -@ ${threads} -f 64 -b -o ${pair_id}.R1.host.sorted.filtered.resorted.bam ${pair_id}.host.sorted.filtered.resorted.bam
-        ${SAMTOOLS} view -@ ${threads} -F 64 -b -o ${pair_id}.R2.host.sorted.filtered.resorted.bam ${pair_id}.host.sorted.filtered.resorted.bam
+        ${SAMTOOLS} view -@ ${threads} -f 65 -b -o ${pair_id}.R1.host.sorted.filtered.resorted.bam ${pair_id}.host.sorted.filtered.resorted.bam
+        ${SAMTOOLS} view -@ ${threads} -f 129 -b -o ${pair_id}.R2.host.sorted.filtered.resorted.bam ${pair_id}.host.sorted.filtered.resorted.bam
         ${SAMTOOLS} bam2fq ${pair_id}.R1.host.sorted.filtered.resorted.bam -n > ${pair_id}.non.host.R1.fastq
         gzip ${pair_id}.non.host.R1.fastq
         ${SAMTOOLS} bam2fq ${pair_id}.R2.host.sorted.filtered.resorted.bam -n > ${pair_id}.non.host.R2.fastq
